@@ -4,14 +4,17 @@ import Navbar from "./components/Navbar";
 import SectionSeparator from "./components/SectionSeparator";
 import AboutSection from "./components/AboutSection";
 import SplineSection from "./components/SplineSection";
+import { ParallaxImages } from "./components/ParallaxImages";
+import ParallaxSection from "./components/ParallaxSection";
 
 
 export default function Home() {
   return (
-    <main className="bg-preto">
+    <main className="bg-preto relative">
       <HeroSection />
       <AboutSection />
       <SplineSection />
+      <ParallaxSection />
     </main>
   );
 }
