@@ -16,10 +16,10 @@ const AboutSection = () => {
   return (
     <motion.section ref={targetRef} id='about' className='min-h-screen text-white py-40 px-20 flex flex-col w-full'>
       <div>
-        <h2 className='text-3xl'>UMA UNIÃO EDIFICADA NA ROCHA</h2>
-        <p className="text-xl max-w-4xl mt-10 tracking-tight text-white/70">Desde o início, nosso relacionamento foi mais do que apenas a união de dois corações; foi a junção de duas almas chamadas a construir uma vida juntas sob a bênção divina. Conhecemo-nos por acaso, mas desde aquele momento, cada passo que demos juntos nos trouxe para mais perto não apenas um do outro, mas também de Deus.</p>
+        <h2 className='2xl:text-3xl text-xl'>UMA UNIÃO EDIFICADA NA ROCHA</h2>
+        <p className="text-lg 2xl:text-xl max-w-2xl 2xl:max-w-4xl mt-10 tracking-tight text-white/70">Desde o início, nosso relacionamento foi mais do que apenas a união de dois corações; foi a junção de duas almas chamadas a construir uma vida juntas sob a bênção divina. Conhecemo-nos por acaso, mas desde aquele momento, cada passo que demos juntos nos trouxe para mais perto não apenas um do outro, mas também de Deus.</p>
       </div>
-      <motion.div className='text-end text-9xl max-w-[70%] self-end mt-20 text-balance underline underline-offset-4'>
+      <motion.div className='text-end text-7xl 2xl:text-9xl max-w-[70%] self-end mt-20 text-balance underline underline-offset-4'>
         {palavras.map((palavra, index) => {
           const start = index / numLetters;
           const end = (index + 1) / numLetters;

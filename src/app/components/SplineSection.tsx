@@ -33,7 +33,7 @@ const SplineSection = () => {
           whileInView={{ scaleX: '0%' }}
           className='origin-left'
         />
-        <Image src={'/heart.png'} alt="logo" width={500} height={250} className='absolute h-28 w-auto top-60 right-1/2 translate-x-1/2' />
+        <Image src={'/heart.png'} alt="logo" width={500} height={250} className='absolute h-28 w-auto top-0 right-1/2 translate-x-1/2' />
       </div>
       <PhotosSection />
 
