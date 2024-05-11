@@ -29,7 +29,6 @@ const HeroSection = () => {
       <div className='flex flex-col justify-center items-center h-full w-full absolute'>
         <h1 className={`md:text-9xl text-6xl text-gray-800 my-2 font-extralight ${dancing.className}`}>Pedro & Erica <span className='sr-only'>Casamento</span></h1>
         <h2 className='md:text-xl text-sm text-gray-800 my-2 font-medium inline-flex items-center gap-3'>10 DE JULHO, 2023 - <Infinity size={30} /></h2>
-        <Image src="/undernames.png" alt="budget" width={300} height={300} className='select-none' />
       </div>
     </motion.section>
   )

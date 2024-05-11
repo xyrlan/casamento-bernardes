@@ -8,7 +8,7 @@ function ParallaxSection() {
         <h2></h2>
         <p className="text-lg 2xl:text-xl max-w-xl 2xl:max-w-2xl mt-10 tracking-tight text-white/70">Débora, irmã de Erica, possui um talento notável para organizar eventos. Surpreendentemente, ela foi responsável por planejar o casamento com apenas uma semana e meia de antecedência e conseguiu que tudo fosse perfeito e uma noite mágica e inesquecivel para nós</p>
       </div>
-      <ParallaxImages baseVelocity={5} />
+      <ParallaxImages baseVelocity={150} />
     </section>
   )
 }

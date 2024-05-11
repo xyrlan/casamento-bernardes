@@ -6,6 +6,7 @@ import AboutSection from "./components/AboutSection";
 import SplineSection from "./components/SplineSection";
 import { ParallaxImages } from "./components/ParallaxImages";
 import ParallaxSection from "./components/ParallaxSection";
+import PartySection from "./components/PartySection";
 
 
 export default function Home() {
@@ -15,6 +16,7 @@ export default function Home() {
       <AboutSection />
       <SplineSection />
       <ParallaxSection />
+      <PartySection />
     </main>
   );
 }
