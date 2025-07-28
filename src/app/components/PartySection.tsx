@@ -357,32 +357,46 @@ function PartySection() {
     { src: "/EricaePedro0580.jpg", alt: "Pedro e Erica na festa - momento 6" }
   ];
 
-  // Animações das fotos sequenciais no centro - criando todos os transforms no nível do componente
-  const photosAnimations = photos.map((_, index) => {
-    const startProgress = 0.5 + (index * 0.06);
-    const endProgress = startProgress + 0.04;
-    const fadeOutProgress = endProgress + 0.02;
+  // Animações das fotos sequenciais - cada foto individualmente
+  // Foto 1
+  const photo1Opacity = useTransform(scrollYProgress, [0.5, 0.54, 0.56], [0, 1, 0]);
+  const photo1Scale = useTransform(scrollYProgress, [0.5, 0.54], [0.8, 1]);
+  const photo1Y = useTransform(scrollYProgress, [0.5, 0.54], [30, 0]);
 
-    const opacity = useTransform(
-      scrollYProgress,
-      [startProgress, endProgress, fadeOutProgress],
-      [0, 1, index === photos.length - 1 ? 1 : 0]
-    );
+  // Foto 2  
+  const photo2Opacity = useTransform(scrollYProgress, [0.56, 0.6, 0.62], [0, 1, 0]);
+  const photo2Scale = useTransform(scrollYProgress, [0.56, 0.6], [0.8, 1]);
+  const photo2Y = useTransform(scrollYProgress, [0.56, 0.6], [30, 0]);
 
-    const scale = useTransform(
-      scrollYProgress,
-      [startProgress, endProgress],
-      [0.8, 1]
-    );
+  // Foto 3
+  const photo3Opacity = useTransform(scrollYProgress, [0.62, 0.66, 0.68], [0, 1, 0]);
+  const photo3Scale = useTransform(scrollYProgress, [0.62, 0.66], [0.8, 1]);
+  const photo3Y = useTransform(scrollYProgress, [0.62, 0.66], [30, 0]);
 
-    const y = useTransform(
-      scrollYProgress,
-      [startProgress, endProgress],
-      [30, 0]
-    );
+  // Foto 4
+  const photo4Opacity = useTransform(scrollYProgress, [0.68, 0.72, 0.74], [0, 1, 0]);
+  const photo4Scale = useTransform(scrollYProgress, [0.68, 0.72], [0.8, 1]);
+  const photo4Y = useTransform(scrollYProgress, [0.68, 0.72], [30, 0]);
 
-    return { opacity, scale, y };
-  });
+  // Foto 5
+  const photo5Opacity = useTransform(scrollYProgress, [0.74, 0.78, 0.8], [0, 1, 0]);
+  const photo5Scale = useTransform(scrollYProgress, [0.74, 0.78], [0.8, 1]);
+  const photo5Y = useTransform(scrollYProgress, [0.74, 0.78], [30, 0]);
+
+  // Foto 6 (última permanece visível)
+  const photo6Opacity = useTransform(scrollYProgress, [0.8, 0.84, 0.86], [0, 1, 1]);
+  const photo6Scale = useTransform(scrollYProgress, [0.8, 0.84], [0.8, 1]);
+  const photo6Y = useTransform(scrollYProgress, [0.8, 0.84], [30, 0]);
+
+  // Array com todas as animações
+  const photosAnimations = [
+    { opacity: photo1Opacity, scale: photo1Scale, y: photo1Y },
+    { opacity: photo2Opacity, scale: photo2Scale, y: photo2Y },
+    { opacity: photo3Opacity, scale: photo3Scale, y: photo3Y },
+    { opacity: photo4Opacity, scale: photo4Scale, y: photo4Y },
+    { opacity: photo5Opacity, scale: photo5Scale, y: photo5Y },
+    { opacity: photo6Opacity, scale: photo6Scale, y: photo6Y }
+  ];
 
   // Animação do texto final
   const finalTextOpacity = useTransform(scrollYProgress, [0.88, 1], [0, 1]);
