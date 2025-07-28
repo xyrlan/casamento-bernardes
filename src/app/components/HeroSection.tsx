@@ -138,8 +138,8 @@ const HeroSection = () => {
             className={`text-center mb-8 ${elegant.className}`}
           >
             <p className="text-white text-lg md:text-xl italic font-light max-w-2xl mx-auto drop-shadow-lg">
-              "Duas almas que se encontraram, dois corações que se uniram,<br />
-              uma história de amor que se eterniza"
+            &quot;Duas almas que se encontraram, dois corações que se uniram,<br />
+              uma história de amor que se eterniza&quot;
             </p>
           </motion.blockquote>
 

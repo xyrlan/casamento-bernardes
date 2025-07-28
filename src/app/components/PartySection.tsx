@@ -84,7 +84,7 @@ const AudioPermissionModal = ({
                   <p className={`text-white/90 text-lg leading-relaxed mb-4 ${elegant.className}`}>
                     Nosso site possui uma trilha sonora especial com{' '}
                     <span className={`text-rose-300 ${script.className} text-xl`}>
-                      "I Love You Baby"
+                      &quot;I Love You Baby&quot;
                     </span>{' '}
                     do Frank Sinatra.
                   </p>
@@ -357,8 +357,8 @@ function PartySection() {
     { src: "/EricaePedro0580.jpg", alt: "Pedro e Erica na festa - momento 6" }
   ];
 
-  // Animações das fotos sequenciais no centro - mais tempo para cada foto
-  const getPhotoAnimation = (index: number) => {
+  // Animações das fotos sequenciais no centro - criando todos os transforms no nível do componente
+  const photosAnimations = photos.map((_, index) => {
     const startProgress = 0.5 + (index * 0.06);
     const endProgress = startProgress + 0.04;
     const fadeOutProgress = endProgress + 0.02;
@@ -382,7 +382,7 @@ function PartySection() {
     );
 
     return { opacity, scale, y };
-  };
+  });
 
   // Animação do texto final
   const finalTextOpacity = useTransform(scrollYProgress, [0.88, 1], [0, 1]);
@@ -472,14 +472,14 @@ function PartySection() {
           </h3>
           <p className={`text-lg text-rose-300 flex items-center gap-2 ${elegant.className}`}>
             <Music size={16} />
-            "I Love You Baby"
+            &quot;I Love You Baby&quot;
           </p>
           <div className="mt-4 h-px bg-gradient-to-r from-transparent via-rose-300/40 to-transparent" />
         </motion.div>
 
         {/* Fotos sequenciais no centro - tamanho quase da tela */}
         {photos.map((photo, index) => {
-          const { opacity, scale, y } = getPhotoAnimation(index);
+          const { opacity, scale, y } = photosAnimations[index];
 
           return (
             <motion.div
@@ -528,7 +528,7 @@ function PartySection() {
               <p className={`text-xl md:text-2xl leading-relaxed text-white/90 font-light ${elegant.className}`}>
                 A música{' '}
                 <span className={`text-rose-300 ${script.className} text-2xl md:text-3xl`}>
-                  "I Love You Baby"
+                  &quot;I Love You Baby&quot;
                 </span>{' '}
                 do ilustre Frank Sinatra foi a escolhida para nossa primeira dança como marido e mulher.
                 Esta belíssima canção marcou nosso casamento e foi o início de uma{' '}
