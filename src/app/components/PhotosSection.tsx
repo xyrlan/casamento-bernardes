@@ -1,138 +1,179 @@
+'use client'
 import Image from 'next/image'
-import React from 'react'
-import { Cormorant_Garamond, Great_Vibes } from "next/font/google"
+import React, { useState, type ReactNode } from 'react'
+import { motion } from 'framer-motion'
+import { fotos, type Foto } from './photos'
 
-const elegant = Cormorant_Garamond({ weight: ['300', '400', '500'], subsets: ["latin"] });
-const script = Great_Vibes({ weight: ['400'], subsets: ["latin"] });
+type Momento = {
+  titulo: string
+  texto: ReactNode
+  fotos: [Foto, Foto]
+  retrato?: boolean
+}
+
+const momentos: Momento[] = [
+  {
+    titulo: 'O primeiro beijo',
+    texto: (
+      <>
+        Nosso primeiro beijo aconteceu em <span className="destaque-script">10 de julho de 2016</span>. E,
+        coincidentemente, nos casamos <strong>exatamente sete anos depois</strong>, no mesmo dia, em 2023.
+      </>
+    ),
+    fotos: [fotos.beijoParque, fotos.caminhando],
+  },
+  {
+    titulo: 'O primeiro encontro',
+    texto: (
+      <>
+        Nosso primeiro encontro foi <span className="destaque-script">mágico e inesquecível</span>. Desde
+        aquele momento, soubemos que algo muito especial estava nascendo entre nós.
+      </>
+    ),
+    fotos: [fotos.flores, fotos.quadriculado],
+  },
+  {
+    titulo: 'Crescendo juntos',
+    texto: (
+      <>
+        Cada momento juntos fortaleceu nosso amor. Descobrimos que{' '}
+        <span className="destaque-script">éramos perfeitos</span> um para o outro, complementando-nos em todos
+        os aspectos da vida.
+      </>
+    ),
+    fotos: [fotos.abraco, fotos.parque],
+    retrato: true,
+  },
+  {
+    titulo: 'O pedido',
+    texto: (
+      <>
+        O pedido de casamento foi um momento <span className="destaque-script">inesquecível</span>. Decidimos
+        oficializar nosso amor e construir um futuro juntos, sob as bênçãos de Deus.
+      </>
+    ),
+    fotos: [fotos.salao, fotos.arcosPB],
+  },
+  {
+    titulo: 'O casamento',
+    texto: (
+      <>
+        Nosso casamento foi a <span className="destaque-script">celebração perfeita</span> do nosso amor.
+        Prometemos um ao outro amor eterno, fidelidade e companheirismo para toda a vida.
+      </>
+    ),
+    fotos: [fotos.janela, fotos.beijoLuzes],
+  },
+]
+
+/*
+  Duas fotos por momento, como no site original (onde a segunda aparecia no hover).
+  Agora a segunda fica visível atrás da primeira, e trocar funciona no mouse,
+  no toque e no teclado.
+*/
+function ParDeFotos({ par, retrato, lado }: { par: [Foto, Foto]; retrato?: boolean; lado: 1 | -1 }) {
+  const [frente, setFrente] = useState(0)
+  const outra = par[1 - frente]
+
+  return (
+    <div className={lado === 1 ? 'pr-[5%] lg:pr-0' : 'pl-[5%] lg:pl-0'}>
+      <div
+        className={`relative ${retrato ? 'aspect-[2/3]' : 'aspect-[3/2]'}`}
+        // Mouse: passar por cima mostra a outra foto. Toque: tocar troca.
+        onPointerEnter={(e) => e.pointerType === 'mouse' && setFrente(1)}
+        onPointerLeave={(e) => e.pointerType === 'mouse' && setFrente(0)}
+        onPointerUp={(e) => e.pointerType !== 'mouse' && setFrente((f) => 1 - f)}
+      >
+        {par.map((foto, i) => {
+          const naFrente = frente === i
+          return (
+            <motion.figure
+              key={foto.src.src}
+              initial={false}
+              animate={
+                naFrente
+                  ? { x: '0%', y: '0%', rotate: 0, scale: 1 }
+                  : { x: `${lado * 6}%`, y: '-6%', rotate: lado * 3.5, scale: 0.92 }
+              }
+              transition={{ type: 'spring', stiffness: 160, damping: 22 }}
+              style={{ zIndex: naFrente ? 2 : 1 }}
+              className="absolute inset-0 overflow-hidden rounded-[14px] bg-noite-alta shadow-[var(--sombra-foto)]"
+            >
+              <Image
+                src={foto.src}
+                alt={naFrente ? foto.alt : ''}
+                fill
+                placeholder="blur"
+                sizes={retrato ? '(min-width: 1024px) 34vw, 86vw' : '(min-width: 1024px) 56vw, 92vw'}
+                className="object-cover"
+              />
+              <motion.span
+                aria-hidden
+                initial={false}
+                animate={{ opacity: naFrente ? 0 : 0.5 }}
+                transition={{ duration: 0.4 }}
+                className="absolute inset-0 bg-noite"
+              />
+            </motion.figure>
+          )
+        })}
+      </div>
+      <button
+        type="button"
+        onClick={() => setFrente((f) => 1 - f)}
+        aria-label={`Ver a outra foto: ${outra.alt}`}
+        className={`mt-5 flex items-center gap-3 text-[15px] italic text-creme-suave transition-colors duration-200 hover:text-creme ${lado === 1 ? '' : 'ml-auto'}`}
+      >
+        <span aria-hidden className="flex gap-1.5">
+          {[0, 1].map((i) => (
+            <span
+              key={i}
+              className={`h-1.5 rounded-full transition-all duration-300 ${frente === i ? 'w-5 bg-rosa' : 'w-1.5 bg-creme/35'}`}
+            />
+          ))}
+        </span>
+        <span className="[@media(hover:hover)]:hidden">Toque na foto para ver a outra</span>
+        <span className="hidden [@media(hover:hover)]:inline">Passe o mouse na foto para ver a outra</span>
+      </button>
+    </div>
+  )
+}
 
 const PhotosSection = () => {
   return (
-    <div className='flex flex-col gap-40 px-6 md:px-20 pb-40 z-10'>
-
-      {/* Seção 1 - Primeiro Beijo */}
-      <div className='z-10 flex flex-col md:flex-row items-center justify-between gap-8'>
-        <div className='relative border-8 border-white/10 border-opacity-20 backdrop-blur-lg overflow-hidden group w-full md:w-fit md:max-2xl:w-[50%] shadow shadow-white/20 rounded-lg'>
-          <Image src="/EricaePedro0023.jpg" alt="Pedro e Erica primeiro beijo" width={1000} height={700} className='absolute group-hover:opacity-0 duration-300 transition-all group-hover:-translate-x-40' priority />
-          <Image src="/EricaePedro0040.jpg" alt="Pedro e Erica momento romântico" width={1000} height={700} className='transition-all duration-300' />
-          
-          {/* Efeito de brilho no hover */}
-          <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          <div className="absolute inset-0 bg-gradient-to-tl from-rose-200/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        </div>
-        
-        <div className='text-white flex items-center justify-center flex-grow'>
-          <div className='max-w-md text-center backdrop-blur-sm bg-white/5 rounded-xl p-6 border border-white/10'>
-            <p className={`text-lg md:text-xl leading-relaxed ${elegant.className}`}>
-              Nosso primeiro beijo aconteceu no dia{' '}
-              <span className={`text-rose-300 ${script.className} text-2xl`}>
-                10 de julho de 2016
-              </span>
-              , e coincidentemente nos casamos exatamente{' '}
-              <span className="text-rose-300 font-medium">7 anos depois</span>{' '}
-              no mesmo dia mágico de 2023.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Seção 2 - Primeiro Encontro */}
-      <div className='z-10 flex flex-col md:flex-row-reverse items-center justify-between gap-8'>
-        <div className='relative border-8 border-white/10 border-opacity-20 backdrop-blur-lg overflow-hidden group w-full md:w-fit md:max-2xl:w-[60%] shadow shadow-white/20 rounded-lg'>
-          <Image src="/EricaePedro0047.jpg" alt="Pedro e Erica primeiro encontro" width={800} height={600} className='absolute group-hover:opacity-0 duration-300 transition-all group-hover:translate-x-40' priority />
-          <Image src="/EricaePedro0041.jpg" alt="Pedro e Erica momentos especiais" width={800} height={600} className='transition-all duration-300' />
-          
-          {/* Efeito de brilho no hover */}
-          <div className="absolute inset-0 bg-gradient-to-bl from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          <div className="absolute inset-0 bg-gradient-to-tr from-rose-200/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        </div>
-        
-        <div className='text-white flex items-center justify-center flex-grow'>
-          <div className='max-w-md text-center backdrop-blur-sm bg-white/5 rounded-xl p-6 border border-white/10'>
-            <p className={`text-lg md:text-xl leading-relaxed ${elegant.className}`}>
-              Nosso primeiro encontro foi{' '}
-              <span className={`text-rose-300 ${script.className} text-2xl`}>
-                mágico e inesquecível
-              </span>
-              . Desde aquele momento soubemos que algo muito especial estava nascendo entre nós.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Seção 3 - Momentos de Crescimento */}
-      <div className='z-10 flex flex-col md:flex-row items-center justify-around gap-8'>
-        <div className='z-10 relative w-full md:w-fit border-8 border-white/10 border-opacity-20 backdrop-blur-lg overflow-hidden group shadow shadow-white/20 rounded-lg'>
-          <Image src="/EricaePedro0013.jpg" alt="Pedro e Erica crescimento do relacionamento" width={400} height={600} className='absolute group-hover:opacity-0 duration-300 transition-all group-hover:-translate-x-40' priority />
-          <Image src="/EricaePedro0006.jpg" alt="Pedro e Erica momentos íntimos" width={400} height={600} className='transition-all duration-300' />
-          
-          {/* Efeito de brilho no hover */}
-          <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          <div className="absolute inset-0 bg-gradient-to-tl from-rose-200/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        </div>
-        
-        <div className='text-white flex items-center justify-center'>
-          <div className='max-w-md text-center backdrop-blur-sm bg-white/5 rounded-xl p-6 border border-white/10'>
-            <p className={`text-lg md:text-xl leading-relaxed ${elegant.className}`}>
-              Cada momento juntos fortaleceu nosso amor. Descobrimos que{' '}
-              <span className={`text-rose-300 ${script.className} text-2xl`}>
-                éramos perfeitos
-              </span>{' '}
-              um para o outro, complementando-nos em todos os aspectos da vida.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Seção 4 - Noivado */}
-      <div className='z-10 flex flex-col md:flex-row-reverse items-center justify-between gap-8'>
-        <div className='z-10 relative border-8 border-white/10 border-opacity-20 backdrop-blur-lg overflow-hidden group w-full md:w-fit md:max-2xl:w-[60%] shadow shadow-white/20 rounded-lg'>
-          <Image src="/EricaePedro0591.jpg" alt="Pedro e Erica pedido de casamento" width={800} height={600} className='absolute group-hover:opacity-0 duration-300 transition-all group-hover:translate-x-40' priority />
-          <Image src="/EricaePedro0167.jpg" alt="Pedro e Erica noivado" width={800} height={600} className='transition-all duration-300' />
-          
-          {/* Efeito de brilho no hover */}
-          <div className="absolute inset-0 bg-gradient-to-bl from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          <div className="absolute inset-0 bg-gradient-to-tr from-rose-200/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        </div>
-        
-        <div className='text-white flex items-center justify-center flex-grow'>
-          <div className='max-w-md text-center backdrop-blur-sm bg-white/5 rounded-xl p-6 border border-white/10'>
-            <p className={`text-lg md:text-xl leading-relaxed ${elegant.className}`}>
-              O pedido de casamento foi um momento{' '}
-              <span className={`text-rose-300 ${script.className} text-2xl`}>
-                inesquecível
-              </span>
-              . Decidimos oficializar nosso amor e construir um futuro juntos sob as bênçãos de Deus.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Seção 5 - Casamento */}
-      <div className='z-10 flex flex-col md:flex-row items-center justify-between gap-8'>
-        <div className='z-10 relative border-8 border-white/10 border-opacity-20 backdrop-blur-lg overflow-hidden group w-full md:w-fit md:max-2xl:w-[50%] shadow shadow-white/20 rounded-lg'>
-          <Image src="/EricaePedro0112.jpg" alt="Pedro e Erica dia do casamento" width={1000} height={700} className='absolute group-hover:opacity-0 duration-300 transition-all group-hover:-translate-x-40' priority />
-          <Image src="/EricaePedro0156.jpg" alt="Pedro e Erica cerimônia" width={1000} height={700} className='transition-all duration-300' />
-          
-          {/* Efeito de brilho no hover */}
-          <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          <div className="absolute inset-0 bg-gradient-to-tl from-rose-200/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        </div>
-        
-        <div className='text-white flex items-center justify-center flex-grow'>
-          <div className='max-w-md text-center backdrop-blur-sm bg-white/5 rounded-xl p-6 border border-white/10'>
-            <p className={`text-lg md:text-xl leading-relaxed ${elegant.className}`}>
-              Nosso casamento foi a{' '}
-              <span className={`text-rose-300 ${script.className} text-2xl`}>
-                celebração perfeita
-              </span>{' '}
-              do nosso amor. Prometemos um ao outro amor eterno, fidelidade e companheirismo para toda a vida.
-            </p>
-          </div>
-        </div>
-      </div>
-
+    <div className='flex flex-col gap-[clamp(96px,13vw,190px)] px-[var(--margem)] pb-[clamp(110px,15vw,220px)] pt-[clamp(72px,10vw,140px)]'>
+      {momentos.map((m, i) => {
+        const espelho = i % 2 === 1
+        return (
+          <article
+            key={m.titulo}
+            className="mx-auto grid w-full max-w-[1240px] items-center gap-y-10 lg:grid-cols-12 lg:gap-x-[clamp(32px,4vw,64px)]"
+          >
+            <div
+              className={`${m.retrato ? 'mx-auto w-[min(100%,420px)] lg:col-span-4 lg:w-full' : 'lg:col-span-7'} ${
+                espelho ? 'lg:order-2 lg:col-start-6' : ''
+              } ${espelho && m.retrato ? 'lg:col-start-8' : ''}`}
+            >
+              <ParDeFotos par={m.fotos} retrato={m.retrato} lado={espelho ? -1 : 1} />
+            </div>
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.5 }}
+              transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+              className={`${m.retrato ? 'lg:col-span-5' : 'lg:col-span-4'} ${
+                espelho ? 'lg:order-1 lg:col-start-1' : m.retrato ? 'lg:col-start-7' : 'lg:col-start-9'
+              }`}
+            >
+              <h3 className="text-balance font-display text-[clamp(34px,3.6vw,54px)] leading-[1.05] text-creme">
+                {m.titulo}
+              </h3>
+              <p className="texto-corrido mt-5 max-w-[30em] text-pretty">{m.texto}</p>
+            </motion.div>
+          </article>
+        )
+      })}
     </div>
-
   )
 }
 

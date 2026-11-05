@@ -1,175 +1,110 @@
 'use client'
-import { useState } from "react";
+import { useReduzir } from "./components/movimento";
+import { useEffect, useRef } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Play } from "lucide-react";
 import { DiscoAudioPlayer } from "./components/DiscoAudioPlayer";
-import { motion } from "framer-motion";
-import { AnimatePresence } from "framer-motion";
-import { Music, Heart, X } from "lucide-react";
-import { Cormorant_Garamond, Great_Vibes } from "next/font/google";
-const elegant = Cormorant_Garamond({ weight: ['300', '400', '500'], subsets: ["latin"] });
-const script = Great_Vibes({ weight: ['400'], subsets: ["latin"] });
+import { MusicaProvider, useMusica } from "./components/Musica";
+import { Varal } from "./components/Varal";
 
-const AudioPermissionModal = ({
-  isOpen,
-  onAccept,
-  onDecline
-}: {
-  isOpen: boolean;
-  onAccept: () => void;
-  onDecline: () => void;
-}) => {
+/*
+  O convite da entrada (antes era um modal de vidro com "Experiência Musical").
+  Continua perguntando sobre a música antes de tudo, mas como a porta do site:
+  o nome dos dois, a data e a escolha de entrar com ou sem música.
+*/
+const ConviteDeEntrada = () => {
+  const { entrou, entrar } = useMusica();
+  const reduzir = useReduzir();
+  const dialogoRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (entrou) return;
+    const html = document.documentElement;
+    const antes = html.style.overflow;
+    html.style.overflow = "hidden";
+    // O foco vai para o convite (sem anel visível); o Tab leva direto aos dois botões
+    dialogoRef.current?.focus({ preventScroll: true });
+    const aoTeclar = (e: KeyboardEvent) => {
+      if (e.key === "Escape") entrar(false);
+    };
+    window.addEventListener("keydown", aoTeclar);
+    return () => {
+      html.style.overflow = antes;
+      window.removeEventListener("keydown", aoTeclar);
+    };
+  }, [entrou, entrar]);
+
+  const saida = { duration: reduzir ? 0.2 : 0.9, ease: [0.22, 1, 0.36, 1] as const };
+
   return (
     <AnimatePresence>
-      {isOpen && (
-        <>
-          {/* Backdrop */}
+      {!entrou && (
+        <motion.div
+          ref={dialogoRef}
+          tabIndex={-1}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="convite-titulo"
+          aria-describedby="convite-texto"
+          initial={false}
+          exit={{ opacity: 0 }}
+          transition={saida}
+          className="fixed inset-0 z-[100] flex flex-col items-center overflow-y-auto bg-noite/[0.94] px-6 outline-none"
+        >
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100]"
-            onClick={onDecline}
-          />
-
-          {/* Modal */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8, y: 50 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.8, y: 50 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-            className="fixed inset-0 flex items-center justify-center z-[101] p-4"
+            exit={reduzir ? undefined : { y: -28 }}
+            transition={saida}
+            className="my-auto flex w-full max-w-[40rem] flex-col items-center py-12 text-center"
           >
-            <div className="relative max-w-md w-full">
-              {/* Efeito de brilho atrás do modal */}
-              <motion.div
-                animate={{
-                  scale: [1, 1.1, 1],
-                  opacity: [0.3, 0.6, 0.3]
-                }}
-                transition={{
-                  duration: 3,
-                  repeat: Infinity,
-                  ease: "easeInOut"
-                }}
-                className="absolute inset-0 bg-gradient-radial from-rose-400/40 via-purple-400/30 to-transparent rounded-3xl blur-2xl"
-              />
+            <Varal lampadas={9} queda={14} className="max-w-[280px]" />
+            <p className="rotulo mt-9 text-luz">10 de julho de 2023</p>
+            <h2
+              id="convite-titulo"
+              className="mt-2 whitespace-nowrap font-script text-[clamp(52px,13.5vw,96px)] leading-[1.15] text-creme"
+            >
+              Pedro <span className="text-rosa">&amp;</span> Erica
+            </h2>
+            <p
+              id="convite-texto"
+              className="mt-5 max-w-[30ch] text-pretty text-[clamp(19px,4.8vw,22px)] leading-relaxed text-creme-suave"
+            >
+              Este site tem trilha sonora: <span className="destaque-script">I Love You Baby</span>, de Frank
+              Sinatra, a música da nossa primeira dança.
+            </p>
+            <div className="mt-10 flex w-full flex-col items-center gap-3 sm:flex-row sm:justify-center sm:gap-6">
+              <button
 
-              <div className="relative backdrop-blur-md bg-white/10 border border-white/20 rounded-3xl p-8 shadow-2xl">
-                {/* Ícone de música animado */}
-                <div className="flex justify-center mb-6">
-                  <motion.div
-                    animate={{
-                      rotate: [0, 10, -10, 0],
-                      scale: [1, 1.1, 1]
-                    }}
-                    transition={{
-                      duration: 2,
-                      repeat: Infinity,
-                      ease: "easeInOut"
-                    }}
-                    className="w-16 h-16 rounded-full bg-gradient-to-r from-rose-500 to-rose-400 flex items-center justify-center shadow-xl"
-                  >
-                    <Music className="text-white" size={32} />
-                  </motion.div>
-                </div>
-
-                {/* Título */}
-                <h2 className={`text-3xl md:text-4xl text-white text-center mb-4 ${script.className}`}>
-                  Experiência Musical
-                </h2>
-
-                {/* Descrição */}
-                <div className="text-center mb-8">
-                  <p className={`text-white/90 text-lg leading-relaxed mb-4 ${elegant.className}`}>
-                    Nosso site possui uma trilha sonora especial com{' '}
-                    <span className={`text-rose-300 ${script.className} text-xl`}>
-                      &quot;I Love You Baby&quot;
-                    </span>{' '}
-                    do Frank Sinatra.
-                  </p>
-
-                  <p className={`text-white/70 text-base ${elegant.className}`}>
-                    Gostaria de ativar a música para uma experiência mais envolvente?
-                  </p>
-                </div>
-
-                {/* Botões */}
-                <div className="flex gap-4 justify-center">
-                  <motion.button
-                    onClick={onDecline}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="px-6 py-3 bg-white/10 border border-white/30 rounded-2xl text-white/80 hover:bg-white/20 transition-all duration-300 flex items-center gap-2"
-                  >
-                    <X size={16} />
-                    <span className={elegant.className}>Não, obrigado</span>
-                  </motion.button>
-
-                  <motion.button
-                    onClick={onAccept}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="px-6 py-3 bg-gradient-to-r from-rose-500 to-rose-400 rounded-2xl text-white font-medium shadow-lg hover:from-rose-400 hover:to-rose-300 transition-all duration-300 flex items-center gap-2"
-                  >
-                    <Heart size={16} />
-                    <span className={elegant.className}>Sim, ativar música</span>
-                  </motion.button>
-                </div>
-
-                {/* Nota pequena */}
-                <p className={`text-white/50 text-xs text-center mt-4 ${elegant.className}`}>
-                  Você pode controlar a música a qualquer momento
-                </p>
-              </div>
+                type="button"
+                onClick={() => entrar(true)}
+                className="inline-flex min-h-[52px] w-full max-w-[300px] items-center justify-center gap-2.5 rounded-full bg-rosa px-8 font-display text-[17px] text-noite shadow-[0_14px_30px_-14px_rgba(240,166,160,0.7)] transition-[transform,background-color] duration-200 hover:bg-[#f5b9b3] active:scale-[0.98] sm:w-auto"
+              >
+                <Play aria-hidden size={16} fill="currentColor" strokeWidth={0} />
+                Entrar com música
+              </button>
+              <button
+                type="button"
+                onClick={() => entrar(false)}
+                className="min-h-[52px] px-4 font-display text-[17px] text-creme-suave underline decoration-creme/30 transition-colors duration-200 hover:text-creme hover:decoration-rosa"
+              >
+                Entrar sem música
+              </button>
             </div>
+            <p className="mt-7 max-w-[34ch] text-[15px] leading-snug text-creme-suave/80">
+              Você pode tocar ou pausar a música quando quiser, no disco do canto da tela.
+            </p>
           </motion.div>
-        </>
+        </motion.div>
       )}
     </AnimatePresence>
   );
 };
 
 export default function Template({ children }: { children: React.ReactNode }) {
-  // const [prevScrollPos, setPrevScrollPos] = useState<number>(0);
-  // const [visible, setVisible] = useState<boolean>(true);
-  // const [isNavbarAtTop, setIsNavbarAtTop] = useState<boolean>(true);
-  const [showAudioModal, setShowAudioModal] = useState(true);
-  const [hasAudioPermission, setHasAudioPermission] = useState(false);
-
-  const handleAudioAccept = () => {
-    setHasAudioPermission(true);
-    setShowAudioModal(false);
-  };
-
-  const handleAudioDecline = () => {
-    setHasAudioPermission(false);
-    setShowAudioModal(false);
-  };
-
-  // useEffect(() => {
-  //   const handleScroll = () => {
-  //     const currentScrollPos = window.scrollY;
-  //     setVisible(prevScrollPos > currentScrollPos || currentScrollPos < 10);
-  //     setPrevScrollPos(currentScrollPos);
-  //     setIsNavbarAtTop(currentScrollPos === 0);
-  //   };
-
-  //   if (typeof window !== 'undefined') {
-  //     window.addEventListener('scroll', handleScroll);
-
-  //     return () => window.removeEventListener('scroll', handleScroll);
-  //   }
-  // }, [prevScrollPos, visible]);
-
   return (
-    <>
-      {/* <Navbar visible={visible} isNavbarAtTop={isNavbarAtTop} /> */}
-      <DiscoAudioPlayer isVisible={true} hasAudioPermission={hasAudioPermission} />
-      <AudioPermissionModal
-        isOpen={showAudioModal}
-        onAccept={handleAudioAccept}
-        onDecline={handleAudioDecline}
-      />
+    <MusicaProvider>
+      <ConviteDeEntrada />
+      <DiscoAudioPlayer />
       {children}
-    </>
-  )
+    </MusicaProvider>
+  );
 }

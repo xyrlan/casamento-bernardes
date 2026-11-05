@@ -1,191 +1,78 @@
-import { useEffect, useRef, useState } from "react";
+'use client'
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Music, Pause, Play } from "lucide-react";
-import { Cormorant_Garamond, Great_Vibes } from "next/font/google";
+import { Pause, Play } from "lucide-react";
+import { formatarTempo, useMusica } from "./Musica";
 
-const elegant = Cormorant_Garamond({ weight: ['300', '400', '500'], subsets: ["latin"] });
-const script = Great_Vibes({ weight: ['400'], subsets: ["latin"] });
-
-export const DiscoAudioPlayer = ({
-  isVisible,
-  hasAudioPermission
-}: {
-  isVisible: boolean;
-  hasAudioPermission: boolean;
-}) => {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [currentTime, setCurrentTime] = useState(0);
-  const audioRef = useRef<HTMLAudioElement>(null);
-
+/* No celular, depois da abertura, o player encolhe para só o disco e não cobre os títulos */
+function useCompacto() {
+  const [compacto, setCompacto] = useState(false);
   useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
+    const medir = () => setCompacto(window.scrollY > window.innerHeight * 0.7);
+    medir();
+    window.addEventListener("scroll", medir, { passive: true });
+    return () => window.removeEventListener("scroll", medir);
+  }, []);
+  return compacto;
+}
 
-    // Atualizar duração quando o áudio carregar
-    const handleLoadedMetadata = () => {
-      console.log('Duração carregada:', audio.duration);
-      setDuration(audio.duration || 0);
-    };
+/*
+  O player do canto: um disco de vinil que gira enquanto "I Love You Baby" toca.
+  O disco inteiro é o botão; a linha rosé embaixo mostra o andamento da música.
+*/
+export const DiscoAudioPlayer = () => {
+  const { entrou, tocando, jaTocou, erro, atual, duracao, alternar } = useMusica();
+  const compacto = useCompacto();
+  const progresso = duracao > 0 ? Math.min(1, atual / duracao) : 0;
 
-    // Atualizar progresso e tempo durante a reprodução
-    const handleTimeUpdate = () => {
-      const current = audio.currentTime;
-      const total = audio.duration;
-
-      setCurrentTime(current);
-
-      if (total > 0) {
-        setProgress((current / total) * 100);
-      }
-    };
-
-    // Eventos para garantir que a duração seja capturada
-    const handleCanPlay = () => {
-      if (audio.duration && !isNaN(audio.duration)) {
-        setDuration(audio.duration);
-      }
-    };
-
-    const handleDurationChange = () => {
-      if (audio.duration && !isNaN(audio.duration)) {
-        setDuration(audio.duration);
-      }
-    };
-
-    // Tentar tocar automaticamente quando se torna visível e tem permissão
-    const tryAutoPlay = async () => {
-      if (isVisible && hasAudioPermission) {
-        try {
-          await audio.play();
-          setIsPlaying(true);
-        } catch (error) {
-          console.log('Autoplay bloqueado pelo navegador');
-          setIsPlaying(false);
-        }
-      }
-    };
-
-    // Adicionar múltiplos listeners para garantir que a duração seja capturada
-    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
-    audio.addEventListener('canplay', handleCanPlay);
-    audio.addEventListener('durationchange', handleDurationChange);
-    audio.addEventListener('timeupdate', handleTimeUpdate);
-
-    if (isVisible && hasAudioPermission) {
-      tryAutoPlay();
-    }
-
-    return () => {
-      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
-      audio.removeEventListener('canplay', handleCanPlay);
-      audio.removeEventListener('durationchange', handleDurationChange);
-      audio.removeEventListener('timeupdate', handleTimeUpdate);
-    };
-  }, [isVisible, hasAudioPermission]);
-
-  const togglePlay = async () => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    try {
-      if (isPlaying) {
-        audio.pause();
-        setIsPlaying(false);
-      } else {
-        await audio.play();
-        setIsPlaying(true);
-      }
-    } catch (error) {
-      console.log('Erro ao reproduzir áudio:', error);
-    }
-  };
-
-  const formatTime = (time: number) => {
-    if (isNaN(time) || time === 0) return '0:00';
-
-    const minutes = Math.floor(time / 60);
-    const seconds = Math.floor(time % 60);
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  };
+  const linha = erro
+    ? "Não tocou. Toque de novo."
+    : jaTocou
+      ? `${formatarTempo(atual)}${duracao > 0 ? ` / ${formatarTempo(duracao)}` : ""}`
+      : "Frank Sinatra";
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{
-        opacity: isVisible ? 1 : 0,
-        scale: isVisible ? 1 : 0.8
+      initial={false}
+      animate={{ opacity: entrou ? 1 : 0, y: entrou ? 0 : -14 }}
+      transition={{ duration: 0.6, delay: entrou ? 0.6 : 0, ease: [0.22, 1, 0.36, 1] }}
+      className="fixed z-50"
+      style={{
+        top: "max(12px, env(safe-area-inset-top))",
+        right: "max(12px, env(safe-area-inset-right))",
+        pointerEvents: entrou ? "auto" : "none",
       }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
-      className="fixed top-4 right-4 md:top-8 md:right-8 z-50"
     >
-      <div className="backdrop-blur-sm bg-white/10 border border-white/20 rounded-xl md:rounded-2xl p-3 md:p-4 shadow-2xl min-w-[200px] md:min-w-[280px] max-w-[280px] md:max-w-none">
-
-        {/* Cabeçalho com informações da música - mobile otimizado */}
-        <div className="flex items-center gap-2 md:gap-3 mb-2 md:mb-3">
-          <div className="w-8 h-8 md:w-10 md:h-10 rounded-full border border-white/30 flex items-center justify-center bg-white/5">
-            <Music className="text-white/70" size={14} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h4 className={`text-white text-xs md:text-sm font-medium truncate ${script.className}`}>
-              I Love You Baby
-            </h4>
-            <p className={`text-white/60 text-xs truncate ${elegant.className}`}>
-              Frank Sinatra
-            </p>
-          </div>
-          <div className="flex justify-center">
-            <motion.button
-              onClick={togglePlay}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.95 }}
-              className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-r from-rose-500 to-rose-400 text-white flex items-center justify-center shadow-lg hover:from-rose-400 hover:to-rose-300 transition-all duration-300"
-            >
-              {isPlaying ? <Pause size={16} /> : <Play size={16} className="ml-0.5" />}
-            </motion.button>
-          </div>
-        </div>
-
-        {/* Barra de progresso - mobile otimizada */}
-        <div className="">
-          <div className="w-full bg-white/20 rounded-full h-1 md:h-1.5 mb-1 md:mb-2">
-            <div
-              className="bg-gradient-to-r from-rose-400 to-rose-300 h-1 md:h-1.5 rounded-full transition-all duration-300"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-          <div className="flex justify-between text-xs text-white/60">
-            <span>{formatTime(currentTime)}</span>
-            <span>{duration > 0 ? formatTime(duration) : '--:--'}</span>
-          </div>
-        </div>
-
-        {/* Controles - mobile otimizado */}
-        {/* <div className="flex justify-center">
-          <motion.button
-            onClick={togglePlay}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
-            className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-r from-rose-500 to-rose-400 text-white flex items-center justify-center shadow-lg hover:from-rose-400 hover:to-rose-300 transition-all duration-300"
-          >
-            {isPlaying ? <Pause size={16} /> : <Play size={16} className="ml-0.5" />}
-          </motion.button>
-        </div> */}
-      </div>
-
-      <audio
-        ref={audioRef}
-        loop
-        preload="auto"
-        onPlay={() => setIsPlaying(true)}
-        onPause={() => setIsPlaying(false)}
+      <button
+        type="button"
+        onClick={alternar}
+        aria-pressed={tocando}
+        aria-label={tocando ? "Pausar “I Love You Baby”" : "Tocar “I Love You Baby”, de Frank Sinatra"}
+        className={`group relative flex items-center gap-3 overflow-hidden rounded-full bg-noite-alta/[0.92] py-1.5 pl-1.5 pr-5 text-left shadow-[0_14px_30px_-14px_rgba(0,0,0,0.9)] ring-1 ring-creme/10 backdrop-blur-sm transition-[transform,box-shadow] duration-200 hover:ring-rosa/40 active:scale-[0.98] md:gap-3.5 md:py-2 md:pl-2 md:pr-6 ${
+          compacto ? "max-sm:p-1.5" : ""
+        }`}
       >
-        {/* Você precisará adicionar o arquivo de áudio na pasta public */}
-        <source src="/i-love-you-baby.mp3" type="audio/mpeg" />
-        <source src="/i-love-you-baby.ogg" type="audio/ogg" />
-      </audio>
+        <span aria-hidden className="relative h-11 w-11 shrink-0 md:h-12 md:w-12">
+          <span className="vinil absolute inset-0 rounded-full shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]" data-tocando={tocando} />
+          <span className="absolute inset-0 flex items-center justify-center text-noite">
+            {tocando ? (
+              <Pause size={11} fill="currentColor" strokeWidth={0} />
+            ) : (
+              <Play size={11} fill="currentColor" strokeWidth={0} className="translate-x-[1px]" />
+            )}
+          </span>
+        </span>
+        <span className={`flex min-w-0 flex-col ${compacto ? "max-sm:hidden" : ""}`}>
+          <span className="font-script text-[21px] leading-[1.15] text-creme md:text-[23px]">I Love You Baby</span>
+          <span className="text-[13px] leading-tight tabular-nums text-creme-suave">{linha}</span>
+        </span>
+        <span aria-hidden className={`absolute inset-x-6 bottom-0 h-[2px] bg-creme/10 ${compacto ? "max-sm:hidden" : ""}`}>
+          <span
+            className="block h-full origin-left bg-rosa transition-transform duration-300 ease-linear"
+            style={{ transform: `scaleX(${progresso})` }}
+          />
+        </span>
+      </button>
     </motion.div>
   );
 };
-

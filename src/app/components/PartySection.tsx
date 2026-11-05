@@ -1,213 +1,208 @@
 'use client'
-import Spline from '@splinetool/react-spline';
-import { useScroll, motion, useTransform, AnimatePresence } from 'framer-motion';
-import { Music, Volume2, VolumeX, Play, Pause, Heart, X } from 'lucide-react';
-import { Cormorant_Garamond, Great_Vibes } from 'next/font/google';
+import { useReduzir } from './movimento';
+import { motion, useMotionValueEvent, useScroll, useTransform, type MotionValue } from 'framer-motion';
+import { Music, Pause, Play } from 'lucide-react';
 import Image from 'next/image'
-import React, { useRef, useEffect, useState } from 'react'
+import React, { useRef, useState } from 'react'
+import { fotos, type Foto } from './photos';
+import { useMusica } from './Musica';
 
-const elegant = Cormorant_Garamond({ weight: ['300', '400', '500'], subsets: ["latin"] });
-const script = Great_Vibes({ weight: ['400'], subsets: ["latin"] });
+const festa: { foto: Foto; posicao: string }[] = [
+  { foto: fotos.faiscas, posicao: 'object-[42%_50%]' },
+  { foto: fotos.pista, posicao: 'object-[56%_50%]' },
+  { foto: fotos.roda, posicao: 'object-[56%_50%]' },
+  { foto: fotos.giro, posicao: 'object-[60%_50%]' },
+  { foto: fotos.fonte, posicao: 'object-[50%_50%]' },
+  { foto: fotos.coracoes, posicao: 'object-[44%_50%]' },
+];
 
-// Modal para permissão de áudio
+/* Onde cada foto começa a entrar, dentro da rolagem da seção (0..1) */
+const INICIO = 0.1;
+const PASSO = 0.145;
+const ENTRADA = 0.075;
+const entradaDa = (i: number) => INICIO + i * PASSO;
 
+function FotoDaFesta({ i, progresso }: { i: number; progresso: MotionValue<number> }) {
+  const { foto, posicao } = festa[i];
+  const a = entradaDa(i);
+  const proxima = i < festa.length - 1 ? entradaDa(i + 1) : 2;
+  // Sobe de baixo, levemente girada, e assenta; quando a próxima chega, recua e escurece
+  const y = useTransform(progresso, [a, a + ENTRADA], ['105vh', '0vh']);
+  const rotate = useTransform(progresso, [a, a + ENTRADA], [i % 2 ? -5 : 5, 0]);
+  const scale = useTransform(progresso, [proxima, proxima + ENTRADA], [1, 0.92]);
+  const sombra = useTransform(progresso, [proxima, proxima + ENTRADA], [0, 0.55]);
+
+  return (
+    <motion.div style={{ y, rotate, scale }} className="absolute inset-0 flex items-center justify-center">
+      <figure className="relative aspect-[4/5] w-[min(calc(100vw-2*var(--margem)),calc(70svh*0.8))] overflow-hidden rounded-[18px] bg-noite-alta shadow-[var(--sombra-foto)] sm:aspect-[3/2] sm:w-[min(calc(100vw-2*var(--margem)),1180px,calc(74svh*1.5))]">
+        <Image
+          src={foto.src}
+          alt={foto.alt}
+          fill
+          placeholder="blur"
+          sizes="(min-width: 640px) 82vw, 92vw"
+          className={`object-cover ${posicao} sm:object-center`}
+        />
+        <motion.span aria-hidden style={{ opacity: sombra }} className="absolute inset-0 bg-noite" />
+      </figure>
+    </motion.div>
+  );
+}
+
+function Titulo({ progresso }: { progresso: MotionValue<number> }) {
+  const opacity = useTransform(progresso, [0.03, 0.11], [1, 0]);
+  const scale = useTransform(progresso, [0.03, 0.11], [1, 0.9]);
+  return (
+    <motion.div style={{ opacity, scale }} className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center">
+      <TituloConteudo />
+    </motion.div>
+  );
+}
+
+function TituloConteudo() {
+  return (
+    <>
+      <h2 id="festa-titulo" className="font-script text-[clamp(96px,16vw,230px)] leading-[1.05] text-creme">
+        A Festa
+      </h2>
+      <p className="mt-2 flex items-center gap-3 font-display text-[clamp(19px,2.2vw,28px)] italic text-creme-suave">
+        <Music aria-hidden size={18} className="shrink-0 text-luz" />
+        Uma noite mágica ao som de Frank Sinatra
+        <Music aria-hidden size={18} className="shrink-0 text-luz" />
+      </p>
+    </>
+  );
+}
+
+function Contador({ progresso }: { progresso: MotionValue<number> }) {
+  const [atual, setAtual] = useState(0);
+  const opacity = useTransform(progresso, [INICIO, INICIO + ENTRADA], [0, 1]);
+  useMotionValueEvent(progresso, 'change', (v) => {
+    let n = 0;
+    festa.forEach((_, i) => {
+      if (v >= entradaDa(i) + ENTRADA * 0.5) n = i + 1;
+    });
+    setAtual(n);
+  });
+  return (
+    <motion.div
+      style={{ opacity }}
+      className="absolute inset-x-0 bottom-[max(18px,3svh)] flex items-center justify-center gap-4"
+    >
+      <span className="font-display text-[17px] tabular-nums text-creme">
+        {Math.max(1, atual)} <span className="text-creme-suave">/ {festa.length}</span>
+      </span>
+      <span aria-hidden className="flex gap-1.5">
+        {festa.map((_, i) => (
+          <span
+            key={i}
+            className={`h-[3px] rounded-full transition-all duration-300 ${i < atual ? 'w-6 bg-rosa' : 'w-3 bg-creme/25'}`}
+          />
+        ))}
+      </span>
+    </motion.div>
+  );
+}
+
+/* O fechamento: a primeira dança e o convite para ouvir a música */
+function PrimeiraDanca() {
+  const { tocando, alternar } = useMusica();
+  return (
+    <section aria-labelledby="danca-titulo" className="relative z-10 px-[var(--margem)] py-[clamp(90px,12vw,180px)]">
+      <div className="mx-auto grid max-w-[1180px] items-center gap-y-12 lg:grid-cols-12 lg:gap-x-[clamp(32px,4vw,64px)]">
+        <motion.figure
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.35 }}
+          transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
+          className="relative aspect-[4/5] overflow-hidden rounded-[18px] shadow-[var(--sombra-foto)] sm:aspect-[3/2] lg:col-span-7"
+        >
+          <Image
+            src={fotos.primeiraDanca.src}
+            alt={fotos.primeiraDanca.alt}
+            fill
+            placeholder="blur"
+            sizes="(min-width: 1024px) 56vw, 92vw"
+            className="object-cover object-[52%_50%]"
+          />
+        </motion.figure>
+        <div className="lg:col-span-5">
+          <h2 id="danca-titulo" className="font-display text-[clamp(34px,3.6vw,54px)] leading-[1.05] text-creme">
+            A primeira dança
+          </h2>
+          <p className="texto-corrido mt-5 text-pretty">
+            A música <span className="destaque-script">I Love You Baby</span>, do ilustre Frank Sinatra, foi a
+            escolhida para a nossa primeira dança como marido e mulher. Esta belíssima canção marcou o nosso
+            casamento e foi o início de uma <span className="destaque-script">noite inesquecível</span>, repleta
+            de amor, alegria e celebração ao lado de nossos entes queridos.
+          </p>
+          <button
+            type="button"
+            onClick={alternar}
+            aria-pressed={tocando}
+            className="mt-8 inline-flex min-h-[52px] items-center gap-3 rounded-full bg-rosa py-2 pl-2 pr-7 font-display text-[17px] text-noite shadow-[0_14px_30px_-14px_rgba(240,166,160,0.7)] transition-[transform,background-color] duration-200 hover:bg-[#f5b9b3] active:scale-[0.98]"
+          >
+            <span aria-hidden className="vinil relative h-10 w-10 rounded-full" data-tocando={tocando}>
+              <span className="absolute inset-0 flex items-center justify-center text-noite">
+                {tocando ? (
+                  <Pause size={10} fill="currentColor" strokeWidth={0} />
+                ) : (
+                  <Play size={10} fill="currentColor" strokeWidth={0} className="translate-x-[1px]" />
+                )}
+              </span>
+            </span>
+            {tocando ? 'Pausar a nossa música' : 'Ouvir a nossa música'}
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* Sem animação: o título e as seis fotos em sequência, sem prender a rolagem */
+function FestaEstatica() {
+  return (
+    <section aria-labelledby="festa-titulo" className="relative z-10 px-[var(--margem)] pt-[clamp(90px,12vw,180px)]">
+      <div className="flex flex-col items-center text-center">
+        <TituloConteudo />
+      </div>
+      <div className="mx-auto mt-16 grid max-w-[1180px] gap-6 sm:grid-cols-2">
+        {festa.map(({ foto }) => (
+          <figure key={foto.src.src} className="relative aspect-[3/2] overflow-hidden rounded-[14px]">
+            <Image src={foto.src} alt={foto.alt} fill placeholder="blur" sizes="(min-width: 640px) 46vw, 92vw" className="object-cover" />
+          </figure>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 function PartySection() {
-  const targetRef = useRef<HTMLDivElement>(null);
-
-  // Estados para controle do modal de permissão de áudio
-  const [showAudioModal, setShowAudioModal] = useState(true);
-  const [hasAudioPermission, setHasAudioPermission] = useState(false);
-
+  const targetRef = useRef<HTMLElement>(null);
+  const reduzir = useReduzir();
   const { scrollYProgress } = useScroll({
     target: targetRef,
     offset: ['start start', 'end end']
   });
 
-  // Handlers para o modal de permissão
-  const handleAudioAccept = () => {
-    setHasAudioPermission(true);
-    setShowAudioModal(false);
-  };
-
-  const handleAudioDecline = () => {
-    setHasAudioPermission(false);
-    setShowAudioModal(false);
-  };
-
-  // Animações do título principal
-  const titleOpacity = useTransform(scrollYProgress, [0, 0.15], [1, 0]);
-  const titleScale = useTransform(scrollYProgress, [0, 0.15], [1, 0.8]);
-
-  // Animações do disco Spline - posicionamento preciso para encaixar no player
-  const discoScale = useTransform(scrollYProgress, [0.1, 0.25, 0.4], [1, 0.4, 0.16]);
-  const discoX = useTransform(scrollYProgress, [0.15, 0.4], ["0vw", "37vw"]);
-  const discoY = useTransform(scrollYProgress, [0.15, 0.4], ["0vh", "-42vh"]);
-  const discoOpacity = useTransform(scrollYProgress, [0, 0.1, 0.45, 0.5], [0, 1, 1, 0]);
-
-  const playerOpacity = useTransform(scrollYProgress, [0.4, 0.5], [0, 1]);
-
-  // Animações das informações da música
-  const musicInfoOpacity = useTransform(scrollYProgress, [0.15, 0.3, 0.45, 0.55], [0, 1, 1, 0]);
-
-  // Controlar quando o container deve ser fixo
-  const containerPosition = useTransform(scrollYProgress, (value) => {
-    return value > 0 && value <= 1 ? "fixed" : "absolute";
-  });
-
-  // Lista de fotos para exibir sequencialmente
-  const photos = [
-    { src: "/EricaePedro0542.jpg", alt: "Pedro e Erica na festa - momento 1" },
-    { src: "/EricaePedro0552.jpg", alt: "Pedro e Erica na festa - momento 2" },
-    { src: "/EricaePedro0558.jpg", alt: "Pedro e Erica na festa - momento 3" },
-    { src: "/EricaePedro0559.jpg", alt: "Pedro e Erica na festa - momento 4" },
-    { src: "/EricaePedro0565.jpg", alt: "Pedro e Erica na festa - momento 5" },
-    { src: "/EricaePedro0580.jpg", alt: "Pedro e Erica na festa - momento 6" }
-  ];
-
-  // Animações das fotos sequenciais - cada foto individualmente
-  // Foto 1
-  const photo1Opacity = useTransform(scrollYProgress, [0.15, 0.25, 0.30], [0, 1, 0]);
-  const photo1Scale = useTransform(scrollYProgress, [0.15, 0.25], [0.8, 1]);
-  const photo1Y = useTransform(scrollYProgress, [0.15, 0.25], [30, 0]);
-
-  // Foto 2  
-  const photo2Opacity = useTransform(scrollYProgress, [0.25, 0.35, 0.40], [0, 1, 0]);
-  const photo2Scale = useTransform(scrollYProgress, [0.25, 0.35], [0.8, 1]);
-  const photo2Y = useTransform(scrollYProgress, [0.21, 0.25], [30, 0]);
-
-  // Foto 3
-  const photo3Opacity = useTransform(scrollYProgress, [0.35, 0.45, 0.50], [0, 1, 0]);
-  const photo3Scale = useTransform(scrollYProgress, [0.35, 0.45], [0.8, 1]);
-  const photo3Y = useTransform(scrollYProgress, [0.35, 0.45], [30, 0]);
-
-  // Foto 4
-  const photo4Opacity = useTransform(scrollYProgress, [0.45, 0.55, 0.60], [0, 1, 0]);
-  const photo4Scale = useTransform(scrollYProgress, [0.45, 0.55], [0.8, 1]);
-  const photo4Y = useTransform(scrollYProgress, [0.45, 0.55], [30, 0]);
-
-  // Foto 5
-  const photo5Opacity = useTransform(scrollYProgress, [0.55, 0.65, 0.70], [0, 1, 0]);
-  const photo5Scale = useTransform(scrollYProgress, [0.55, 0.65], [0.8, 1]);
-  const photo5Y = useTransform(scrollYProgress, [0.55, 0.65], [30, 0]);
-
-  // Foto 6 (última permanece visível)
-  const photo6Opacity = useTransform(scrollYProgress, [0.65, 0.75, 0.80], [0, 1, 1]);
-  const photo6Scale = useTransform(scrollYProgress, [0.65, 0.75], [0.8, 1]);
-  const photo6Y = useTransform(scrollYProgress, [0.65, 0.75], [30, 0]);
-
-  // Array com todas as animações
-  const photosAnimations = [
-    { opacity: photo1Opacity, scale: photo1Scale, y: photo1Y },
-    { opacity: photo2Opacity, scale: photo2Scale, y: photo2Y },
-    { opacity: photo3Opacity, scale: photo3Scale, y: photo3Y },
-    { opacity: photo4Opacity, scale: photo4Scale, y: photo4Y },
-    { opacity: photo5Opacity, scale: photo5Scale, y: photo5Y },
-    { opacity: photo6Opacity, scale: photo6Scale, y: photo6Y }
-  ];
-
-  // Animação do texto final
-  const finalTextOpacity = useTransform(scrollYProgress, [0.88, 1], [0, 1]);
-  const finalTextY = useTransform(scrollYProgress, [0.88, 1], ["50%", "0%"]);
-
   return (
-    <section ref={targetRef} className='relative h-[1200vh] overflow-hidden'>
-
-      {/* Container que só é fixo quando estamos na seção */}
-      <motion.div
-        style={{ position: containerPosition }}
-        className="inset-0 flex items-center justify-center z-10 h-screen "
-      >
-
-        {/* Título principal */}
-        <motion.div
-          style={{
-            opacity: titleOpacity,
-            scale: titleScale
-          }}
-          className="absolute inset-0 flex flex-col items-center justify-center text-center px-6"
-        >
-          <div className="backdrop-blur-sm bg-white/5 rounded-3xl p-12 border border-white/10 shadow-2xl max-w-4xl">
-            <h2 className={`text-6xl md:text-8xl lg:text-9xl text-white mb-6 ${script.className}`}>
-              A Festa
-            </h2>
-
-            <div className="flex items-center justify-center gap-4 text-rose-300">
-              <Music size={24} />
-              <p className={`text-2xl md:text-3xl ${elegant.className}`}>
-                Uma noite mágica ao som de Frank Sinatra
-              </p>
-              <Music size={24} />
-            </div>
+    <>
+      {reduzir ? (
+        <FestaEstatica />
+      ) : (
+        // Antes eram 1200vh para seis fotos; agora cada foto pede pouco menos de uma tela
+        <section ref={targetRef} aria-labelledby="festa-titulo" className='relative z-10 h-[620svh]'>
+          <div className="sticky top-0 h-[100svh] overflow-hidden">
+            <Titulo progresso={scrollYProgress} />
+            {festa.map((_, i) => (
+              <FotoDaFesta key={i} i={i} progresso={scrollYProgress} />
+            ))}
+            <Contador progresso={scrollYProgress} />
           </div>
-        </motion.div>
-
-        {/* Fotos sequenciais no centro - tamanho quase da tela */}
-        {photos.map((photo, index) => {
-          const { opacity, scale, y } = photosAnimations[index];
-
-          return (
-            <motion.div
-              key={index}
-              style={{
-                opacity,
-                scale,
-                y
-              }}
-              className="absolute inset-0 flex items-center justify-center p-4 md:p-8"
-            >
-              <div className="relative group w-full h-full max-w-6xl max-h-[85vh]">
-                <Image
-                  src={photo.src}
-                  alt={photo.alt}
-                  fill
-                  className="border-8 border-white/20 backdrop-blur-sm shadow-2xl rounded-xl transition-all duration-300 group-hover:border-white/40 group-hover:scale-[1.02] object-cover"
-                  loading="lazy"
-                  sizes="(max-width: 768px) 95vw, (max-width: 1200px) 85vw, 80vw"
-                />
-
-                {/* Overlay com efeito de brilho no hover */}
-                <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl" />
-                <div className="absolute inset-0 bg-gradient-to-tl from-rose-200/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl" />
-
-                {/* Contador de foto */}
-                <div className="absolute bottom-6 right-6 backdrop-blur-sm bg-black/60 rounded-full px-4 py-2 text-white text-lg font-medium border border-white/20">
-                  {index + 1} / {photos.length}
-                </div>
-
-              </div>
-            </motion.div>
-          );
-        })}
-
-        {/* Texto final */}
-        <motion.div
-          style={{
-            opacity: finalTextOpacity,
-            y: finalTextY
-          }}
-          className="absolute inset-0 flex items-center justify-center px-6"
-        >
-          <div className="max-w-4xl mx-auto text-center">
-            <div className="backdrop-blur-md bg-white/20 rounded-3xl p-12 border border-white/20 shadow-2xl">
-              <p className={`text-xl md:text-2xl leading-relaxed text-white/90 font-light ${elegant.className}`}>
-                A música{' '}
-                <span className={`text-rose-300 ${script.className} text-2xl md:text-3xl`}>
-                  &quot;I Love You Baby&quot;
-                </span>{' '}
-                do ilustre Frank Sinatra foi a escolhida para nossa primeira dança como marido e mulher.
-                Esta belíssima canção marcou nosso casamento e foi o início de uma{' '}
-                <span className={`text-rose-300 ${script.className} text-2xl md:text-3xl`}>
-                  noite inesquecível
-                </span>
-                , repleta de amor, alegria e celebração ao lado de nossos entes queridos.
-              </p>
-            </div>
-          </div>
-        </motion.div>
-
-      </motion.div>
-    </section>
+        </section>
+      )}
+      <PrimeiraDanca />
+    </>
   )
 }
 

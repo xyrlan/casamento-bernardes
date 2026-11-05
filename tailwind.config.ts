@@ -8,14 +8,18 @@ const config: Config = {
   ],
   theme: {
     extend: {
-      backgroundImage: {
-        "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
-        "gradient-conic":
-          "conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))",
-      },
       colors: {
-        "primary": '#ece4fc',
-        "preto": '#232b33',
+        noite: "rgb(var(--c-noite) / <alpha-value>)",
+        "noite-alta": "rgb(var(--c-noite-alta) / <alpha-value>)",
+        creme: "rgb(var(--c-creme) / <alpha-value>)",
+        "creme-suave": "rgb(var(--c-creme-suave) / <alpha-value>)",
+        rosa: "rgb(var(--c-rosa) / <alpha-value>)",
+        luz: "rgb(var(--c-luz) / <alpha-value>)",
+      },
+      fontFamily: {
+        display: ["var(--font-display)", "Georgia", "serif"],
+        texto: ["var(--font-texto)", "Georgia", "serif"],
+        script: ["var(--font-script)", "cursive"],
       },
     },
   },

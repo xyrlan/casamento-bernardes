@@ -2,9 +2,172 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+  Uma noite quente sob arcos de luz: o fundo é vinho escuro, o texto é creme,
+  o acento é o rosé das flores e o dourado vem das lâmpadas do varal.
+*/
+:root {
+  /* Canais RGB para o Tailwind aceitar transparência (bg-noite/90, text-creme/80...) */
+  --c-noite: 28 20 24;
+  --c-noite-alta: 42 29 35;
+  --c-creme: 247 238 227;
+  --c-creme-suave: 217 200 185;
+  --c-rosa: 240 166 160;
+  --c-luz: 246 207 142;
+  --noite: rgb(var(--c-noite));
+  --noite-alta: rgb(var(--c-noite-alta));
+  --creme: rgb(var(--c-creme));
+  --creme-suave: rgb(var(--c-creme-suave));
+  --rosa: rgb(var(--c-rosa));
+  --luz: rgb(var(--c-luz));
+  --margem: clamp(20px, 5vw, 88px);
+  --sombra-foto: 0 30px 60px -28px rgba(0, 0, 0, 0.75), 0 8px 18px -10px rgba(0, 0, 0, 0.5);
+}
+
+html {
+  background: var(--noite);
+  color: var(--creme);
+  -webkit-text-size-adjust: 100%;
+  scrollbar-color: #5a4249 var(--noite);
+}
+
+body {
+  background: var(--noite);
+  min-height: 100svh;
+  font-size: 19px;
+  line-height: 1.6;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--rosa);
+  color: var(--noite);
+}
+
+:focus-visible {
+  outline: 2px solid var(--luz);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+a {
+  text-underline-offset: 0.22em;
+  text-decoration-thickness: 1px;
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
+  .text-pretty {
+    text-wrap: pretty;
+  }
 }
 
+@layer components {
+  /* Rótulos em versalete espaçado (datas, legendas curtas) */
+  .rotulo {
+    font-family: var(--font-display), Georgia, serif;
+    font-variation-settings: "opsz" 11;
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  /* As palavras que a página "escreve à mão" dentro de um texto */
+  .destaque-script {
+    font-family: var(--font-script), cursive;
+    color: var(--rosa);
+    font-size: 1.42em;
+    line-height: 0.8;
+    padding-inline: 0.06em;
+  }
+
+  .texto-corrido {
+    font-size: clamp(19px, 1.45vw, 22px);
+    line-height: 1.62;
+    color: var(--creme-suave);
+  }
+  .texto-corrido strong {
+    color: var(--creme);
+    font-weight: 500;
+  }
+}
+
+/* ---------- Luzes que flutuam pela noite (no lugar dos corações) ---------- */
+.ceu-luz {
+  position: absolute;
+  bottom: -4vh;
+  width: var(--tam, 6px);
+  height: var(--tam, 6px);
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgba(255, 228, 176, 0.95) 0%, rgba(246, 207, 142, 0.55) 35%, rgba(246, 207, 142, 0) 70%);
+  opacity: 0;
+  animation: subir var(--dur, 26s) linear var(--atraso, 0s) infinite;
+  will-change: transform, opacity;
+}
+
+@keyframes subir {
+  0% {
+    transform: translate3d(0, 0, 0);
+    opacity: 0;
+  }
+  12% {
+    opacity: var(--brilho, 0.7);
+  }
+  50% {
+    transform: translate3d(var(--deriva, 18px), -55vh, 0);
+  }
+  88% {
+    opacity: var(--brilho, 0.7);
+  }
+  100% {
+    transform: translate3d(calc(var(--deriva, 18px) * -0.6), -110vh, 0);
+    opacity: 0;
+  }
+}
+
+/* Lâmpadas do varal piscando devagar, cada uma no seu tempo */
+.lampada {
+  animation: piscar 4.8s ease-in-out var(--atraso, 0s) infinite;
+}
+@keyframes piscar {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+/* O disco de vinil do player gira só enquanto a música toca */
+.vinil {
+  background:
+    radial-gradient(circle, var(--rosa) 0 21%, #3a2228 21.5% 24%, transparent 24.5%),
+    repeating-radial-gradient(circle, #191113 0 1.5px, #2b1f23 1.5px 3px);
+  animation: girar 2.6s linear infinite;
+  animation-play-state: paused;
+}
+.vinil[data-tocando="true"] {
+  animation-play-state: running;
+}
+@keyframes girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ceu-luz {
+    animation: none;
+    opacity: 0.45;
+    transform: translateY(calc(var(--pos, 50) * -1vh));
+  }
+  .lampada,
+  .vinil {
+    animation: none;
+  }
+}

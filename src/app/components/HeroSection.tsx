@@ -1,286 +1,110 @@
 'use client'
+import { useReduzir } from './movimento';
 import Image from 'next/image'
-import React, { useRef, useEffect, useState } from 'react'
-import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion"
-import { Kristi, Great_Vibes, Cormorant_Garamond } from "next/font/google";
-import { Heart, Infinity, Sparkles } from 'lucide-react';
+import React, { useRef } from 'react'
+import { motion, useScroll, useTransform } from "framer-motion"
+import { Infinity as Infinito } from 'lucide-react';
+import { fotos } from './photos';
+import { useMusica } from './Musica';
 
-const dancing = Kristi({ weight: ['400'], subsets: ["latin"] });
-const romantic = Great_Vibes({ weight: ['400'], subsets: ["latin"] });
-const elegant = Cormorant_Garamond({ weight: ['300', '400', '500'], subsets: ["latin"] });
+const suave = [0.22, 1, 0.36, 1] as const;
 
-// Componente para partículas flutuantes
-const FloatingParticle = ({ delay = 0 }: { delay?: number }) => {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 100, x: Math.random() * 100 }}
-      animate={{ 
-        opacity: [0, 1, 0],
-        y: -100,
-        x: Math.random() * 200 - 100,
-        rotate: 360
-      }}
-      transition={{
-        duration: 8,
-        delay,
-        repeat: Number.POSITIVE_INFINITY,
-        repeatDelay: Math.random() * 3,
-        ease: "easeOut"
-      }}
-      className="absolute text-pink-200/20"
-    >
-      <Heart size={12} fill="currentColor" />
-    </motion.div>
-  )
-}
-
-// Ornamento decorativo
-const Ornament = ({ className = "" }: { className?: string }) => (
-  <motion.div 
-    initial={{ scaleX: 0 }}
-    whileInView={{ scaleX: 1 }}
-    transition={{ duration: 1.5, ease: "easeOut" }}
-    className={`flex items-center gap-4 ${className}`}
-  >
-    <div className="h-px bg-gradient-to-r from-transparent via-white/40 to-transparent flex-1" />
-    <Sparkles className="text-white/60 drop-shadow-lg" size={16} />
-    <div className="h-px bg-gradient-to-r from-transparent via-white/40 to-transparent flex-1" />
-  </motion.div>
-)
-
+/*
+  A abertura: a foto das mãos dadas sob as árvores, a frase, os nomes e a data.
+  Os nomes são "escritos" (revelados da esquerda para a direita) quando o convidado
+  passa pelo convite. Ao rolar, a foto se recolhe num quadro de cantos arredondados.
+*/
 const HeroSection = () => {
-  const targetRef = useRef<HTMLDivElement>(null)
-  const [mounted, setMounted] = useState(false)
-  
+  const targetRef = useRef<HTMLElement>(null)
+  const { entrou } = useMusica()
+  const reduzir = useReduzir()
+
   const { scrollYProgress } = useScroll({
     target: targetRef,
-    offset: ['end end', 'end start']
+    offset: ['start start', 'end start']
   })
 
-  const opacity = useTransform(scrollYProgress, [0, 0.8], [1, 0])
-  const borderRadius = useTransform(scrollYProgress, [0, 0.8], ["0%" , "80%"])
-  const scale = useTransform(scrollYProgress, [0, 0.5], [1, 1.1])
+  const recolher = useTransform(scrollYProgress, [0, 0.8], [0, 1])
+  const clipPath = useTransform(recolher, (v) => `inset(${v * 4}% ${v * 4}% ${v * 4}% ${v * 4}% round ${v * 32}px)`)
+  const escala = useTransform(scrollYProgress, [0, 1], [1, 1.1])
+  const conteudoY = useTransform(scrollYProgress, [0, 0.7], ['0%', '-16%'])
+  const conteudoOpacidade = useTransform(scrollYProgress, [0, 0.5], [1, 0])
 
-  useEffect(() => {
-    setMounted(true)
-  }, [])
+  const aparecer = (atraso: number) => ({
+    initial: { opacity: 0, y: reduzir ? 0 : 18 },
+    animate: entrou ? { opacity: 1, y: 0 } : { opacity: 0, y: reduzir ? 0 : 18 },
+    transition: { duration: reduzir ? 0.3 : 1.1, delay: entrou && !reduzir ? atraso : 0, ease: suave },
+  })
 
-  // Criando partículas com delays diferentes
-  const particles = Array.from({ length: 12 }, (_, i) => (
-    <FloatingParticle key={i} delay={i * 0.5} />
-  ))
+  // Os nomes surgem como se fossem escritos, da esquerda para a direita
+  const escrever = (atraso: number) => ({
+    initial: { clipPath: 'inset(-30% 112% -30% -12%)' },
+    animate: { clipPath: entrou ? 'inset(-30% -12% -30% -12%)' : 'inset(-30% 112% -30% -12%)' },
+    transition: { duration: reduzir ? 0 : 1.2, delay: entrou && !reduzir ? atraso : 0, ease: [0.65, 0, 0.35, 1] as const },
+  })
 
   return (
-    <motion.section 
-      ref={targetRef} 
-      style={{ 
-        borderBottomLeftRadius: borderRadius, 
-        borderBottomRightRadius: borderRadius,
-        scale 
-      }} 
-      className="min-h-screen relative overflow-hidden"
-      aria-label="Seção principal do casamento"
+    <section
+      ref={targetRef}
+      aria-label="Pedro e Erica, 10 de julho de 2023"
+      className="relative z-10 h-[100svh] min-h-[600px]"
     >
-      {/* Imagem de fundo com parallax */}
-      <motion.div style={{ scale }} className="absolute inset-0">
-        <Image 
-          src="/EricaePedro0031-2.jpg"  
-          alt="Foto romântica de Pedro e Erica" 
-          width={2000} 
-          height={2000} 
-          className='object-cover h-full w-full' 
-          priority 
-        />
+      <motion.div style={reduzir ? { clipPath: 'none' } : { clipPath }} className="absolute inset-0 overflow-hidden">
+        <motion.div style={reduzir ? { scale: 1 } : { scale: escala }} className="absolute inset-0">
+          <Image
+            src={fotos.maosDadas.src}
+            alt={fotos.maosDadas.alt}
+            fill
+            priority
+            placeholder="blur"
+            sizes="100vw"
+            className="object-cover object-[50%_42%]"
+          />
+        </motion.div>
+        {/* A noite sobe do pé da foto para os nomes ficarem legíveis */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_top,#1c1418_0%,rgba(28,20,24,0.86)_30%,rgba(28,20,24,0.42)_62%,rgba(28,20,24,0.28)_100%)]" />
       </motion.div>
-      
-      {/* Overlay escuro para melhor contraste */}
-      <div className='absolute inset-0 bg-black/30' />
-      <div className='absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-black/30' />
-      <div className='absolute inset-0 bg-gradient-radial from-transparent via-black/10 to-black/40' />
-      
-      {/* Partículas flutuantes */}
-      <AnimatePresence>
-        {mounted && (
-          <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            {particles}
-          </div>
-        )}
-      </AnimatePresence>
-      
-      {/* Conteúdo principal */}
-      <div className='flex flex-col justify-center items-center h-full w-full absolute z-10 px-4'>
-        
-        {/* Container com fundo blur para o conteúdo */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1.2, ease: "easeOut" }}
-          viewport={{ once: true }}
-          className="backdrop-blur-sm bg-white/10 rounded-3xl p-8 md:p-12 border border-white/20 shadow-2xl max-w-4xl w-full"
+
+      <motion.div
+        style={reduzir ? { y: 0, opacity: 1 } : { y: conteudoY, opacity: conteudoOpacidade }}
+        className="relative flex h-full flex-col items-center justify-end px-6 pb-[clamp(56px,10svh,120px)] text-center"
+      >
+        <motion.blockquote
+          {...aparecer(0.15)}
+          className="max-w-[32ch] text-balance font-display text-[clamp(18px,1.9vw,24px)] italic leading-snug text-creme/90"
         >
-          {/* Ornamento superior */}
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.5 }}
-            viewport={{ once: true }}
-            className="mb-8 w-64 mx-auto"
+          “Duas almas que se encontraram, dois corações que se uniram, uma história de amor que se eterniza.”
+        </motion.blockquote>
+
+        <h1 className="mt-[clamp(14px,2.4svh,28px)] flex flex-col items-center font-script text-[clamp(76px,12.5vw,184px)] leading-[1.02] text-creme [text-shadow:0_2px_30px_rgba(28,20,24,0.45)] sm:block">
+          <motion.span {...escrever(0.4)} className="inline-block px-[0.12em]">
+            Pedro
+          </motion.span>
+          <motion.span
+            {...aparecer(1.1)}
+            className="-my-[0.18em] inline-block text-[0.62em] text-rosa sm:mx-[0.06em] sm:my-0 sm:text-[0.8em]"
           >
-            <Ornament />
-          </motion.div>
+            &amp;
+          </motion.span>
+          <motion.span {...escrever(1.25)} className="inline-block px-[0.12em]">
+            Erica
+          </motion.span>
+        </h1>
 
-          {/* Citação romântica */}
-          <motion.blockquote
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.8 }}
-            viewport={{ once: true }}
-            className={`text-center mb-8 ${elegant.className}`}
-          >
-            <p className="text-white text-lg md:text-xl italic font-light max-w-2xl mx-auto drop-shadow-lg">
-            &quot;Duas almas que se encontraram, dois corações que se uniram,<br />
-              uma história de amor que se eterniza&quot;
-            </p>
-          </motion.blockquote>
-
-          {/* Nomes principais com animação sequencial */}
-          <div className="text-center">
-            <motion.h1 
-              className={`md:text-8xl text-5xl text-white font-extralight ${dancing.className} relative drop-shadow-2xl`}
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              transition={{ duration: 0.5 }}
-              viewport={{ once: true }}
-              style={{
-                textShadow: '0 0 30px rgba(0,0,0,0.8), 0 0 60px rgba(0,0,0,0.5)'
-              }}
-            >
-              <motion.span
-                initial={{ opacity: 0, x: -50, rotateY: -90 }}
-                whileInView={{ opacity: 1, x: 0, rotateY: 0 }}
-                transition={{ duration: 1, delay: 1.2, ease: "backOut" }}
-                viewport={{ once: true }}
-                className="inline-block"
-              >
-                Pedro
-              </motion.span>
-              
-              <motion.span
-                initial={{ opacity: 0, scale: 0 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.8, delay: 1.8, type: "spring" }}
-                viewport={{ once: true }}
-                className="mx-4 text-rose-300 inline-block drop-shadow-lg"
-              >
-                &
-              </motion.span>
-              
-              <motion.span
-                initial={{ opacity: 0, x: 50, rotateY: 90 }}
-                whileInView={{ opacity: 1, x: 0, rotateY: 0 }}
-                transition={{ duration: 1, delay: 2.4, ease: "backOut" }}
-                viewport={{ once: true }}
-                className="inline-block"
-              >
-                Erica
-              </motion.span>
-              
-              {/* Efeito de brilho sutil */}
-              <motion.div
-                animate={{ opacity: [0, 0.2, 0] }}
-                transition={{ duration: 4, repeat: Number.POSITIVE_INFINITY, repeatDelay: 3 }}
-                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12"
-              />
-            </motion.h1>
-          </div>
-
-          {/* Data com elementos decorativos */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 3 }}
-            viewport={{ once: true }}
-            className="mt-8 flex flex-col items-center gap-4"
-          >
-            <div className={`text-center ${elegant.className}`}>
-              <time 
-                dateTime="2023-07-10" 
-                className="text-white md:text-2xl text-lg font-medium tracking-wider drop-shadow-lg"
-              >
-                10 DE JULHO, 2023
-              </time>
-            </div>
-            
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 20, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
-              className="text-rose-300 drop-shadow-lg"
-              aria-hidden="true"
-            >
-              <Infinity size={32} />
-            </motion.div>
-            
-            <span className='sr-only'>Amor infinito</span>
-            
-            <p className={`text-white/90 text-sm md:text-base ${elegant.className} font-light drop-shadow-lg`}>
-              Uma celebração de amor eterno
-            </p>
-          </motion.div>
-
-          {/* Ornamento inferior */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 3.5 }}
-            viewport={{ once: true }}
-            className="mt-8 w-64 mx-auto"
-          >
-            <Ornament />
-          </motion.div>
+        <motion.div {...aparecer(2)} className="mt-[clamp(10px,2svh,22px)] flex items-center gap-4">
+          <span aria-hidden className="h-px w-8 bg-luz/60 sm:w-14" />
+          <time dateTime="2023-07-10" className="rotulo text-[14px] text-creme sm:text-[15px]">
+            10 de julho de 2023
+          </time>
+          <span aria-hidden className="h-px w-8 bg-luz/60 sm:w-14" />
         </motion.div>
 
-        {/* Elementos decorativos de canto - fora do container blur */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1, delay: 4, type: "spring" }}
-          className="absolute top-8 left-8 text-white/30 drop-shadow-lg"
-          viewport={{ once: true }}
-        >
-          <Heart size={24} fill="currentColor" />
-        </motion.div>
-        
-        <motion.div
-          initial={{ opacity: 0, scale: 0 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1, delay: 4.2, type: "spring" }}
-          className="absolute top-8 right-8 text-white/30 drop-shadow-lg"
-          viewport={{ once: true }}
-        >
-          <Heart size={24} fill="currentColor" />
-        </motion.div>
-        
-        <motion.div
-          initial={{ opacity: 0, scale: 0 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1, delay: 4.4, type: "spring" }}
-          className="absolute bottom-8 left-8 text-white/30 drop-shadow-lg hidden md:block"
-          viewport={{ once: true }}
-        >
-          <Sparkles size={20} />
-        </motion.div>
-        
-        <motion.div
-          initial={{ opacity: 0, scale: 0 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1, delay: 4.6, type: "spring" }}
-          className="absolute bottom-8 right-8 text-white/30 drop-shadow-lg hidden md:block"
-          viewport={{ once: true }}
-        >
-          <Sparkles size={20} />
-        </motion.div>
-      </div>
-    </motion.section>
+        <motion.p {...aparecer(2.25)} className="mt-3 flex items-center gap-2 text-[18px] italic text-creme-suave">
+          <Infinito aria-hidden size={20} strokeWidth={1.5} className="text-rosa" />
+          Uma celebração de amor eterno
+        </motion.p>
+      </motion.div>
+    </section>
   )
 }
 
